@@ -1,0 +1,91 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #000;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+}
+
+#stage {
+  position: fixed;
+  inset: 0;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+}
+#stage.top { align-items: flex-start; }
+
+#screen {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: #000;
+  touch-action: none;
+}
+
+/* ---- touch controls and settings (src/input/touch.js) ---- */
+:root {
+  --sat-t: env(safe-area-inset-top, 0px);
+  --sat-r: env(safe-area-inset-right, 0px);
+  --sat-b: env(safe-area-inset-bottom, 0px);
+  --sat-l: env(safe-area-inset-left, 0px);
+  --maze: #2121ff;
+  --pac: #ffff00;
+}
+#touch { position: absolute; inset: 0; pointer-events: auto; --tc-opacity: 0.35; font-family: ui-monospace, Menlo, Consolas, monospace; }
+#touch .tc-pad {
+  position: absolute; border-radius: 50%; box-sizing: border-box;
+  opacity: 0; transition: opacity 0.15s; pointer-events: none;
+  border: 3px double rgba(90, 90, 255, 0.9);
+  background: rgba(33, 33, 255, 0.12);
+  color: #fff;
+}
+#touch.tc-visible .tc-pad { opacity: var(--tc-opacity); }
+#touch.tc-stick .tc-pad { transition: none; }
+#touch .tc-pad.tc-hidden { opacity: 0; }
+#touch .tc-arrow { position: absolute; width: 1.2em; height: 1.2em; line-height: 1.2em; text-align: center; opacity: 0.6; }
+#touch .tc-arrow.on { opacity: 1; color: var(--pac); }
+#touch .tc-l { left: 6%; top: 50%; transform: translateY(-50%); }
+#touch .tc-r { right: 6%; top: 50%; transform: translateY(-50%); }
+#touch .tc-u { top: 6%; left: 50%; transform: translateX(-50%); }
+#touch .tc-d { bottom: 6%; left: 50%; transform: translateX(-50%); }
+#touch .tc-knob { position: absolute; border-radius: 50%; background: rgba(255, 255, 0, 0.5); }
+#touch .tc-hint {
+  position: absolute; left: 50%; bottom: calc(var(--sat-b) + 10px); transform: translateX(-50%);
+  color: var(--pac); opacity: 0.35; font-size: 28px; pointer-events: none;
+}
+#touch:not(.tc-visible) .tc-hint { display: none; }
+
+/* the settings button: a pixel cog */
+#touch .tc-gear {
+  position: absolute; top: calc(var(--sat-t) + 8px); right: calc(var(--sat-r) + 8px);
+  width: 40px; height: 40px; padding: 8px; border: 0; background: transparent; cursor: pointer;
+  opacity: 0.55;
+}
+#touch .tc-gear:hover, #touch .tc-gear:active { opacity: 1; }
+#touch .tc-cog { width: 100%; height: 100%; fill: var(--pac); display: block; }
+
+/* the settings panel, in the maze's colours */
+#touch .tc-panel {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  background: #000; color: #dedeff; border: 6px double var(--maze); border-radius: 10px;
+  padding: 14px 18px; min-width: 280px; max-width: 90vw; max-height: 90vh; overflow: auto;
+  font-size: 15px; text-transform: uppercase; letter-spacing: 0.04em;
+  display: flex; flex-direction: column; gap: 10px;
+}
+#touch .tc-panel[hidden] { display: none; }
+#touch .tc-panel h2, #touch .tc-panel h3 { margin: 0; color: var(--pac); font-size: 17px; }
+#touch .tc-panel h3 { margin-top: 6px; font-size: 14px; color: #ffb8ff; }
+#touch .tc-panel label { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+#touch .tc-panel select, #touch .tc-panel input[type=range] { flex: 1; max-width: 60%; font: inherit; text-transform: none; background: #000; color: #dedeff; border: 2px solid var(--maze); }
+#touch .tc-panel input[type=checkbox] { accent-color: var(--pac); width: 18px; height: 18px; }
+#touch .tc-panel button { font: inherit; text-transform: uppercase; padding: 8px 18px; border-radius: 0; border: 2px solid var(--pac); background: #000; color: var(--pac); cursor: pointer; }
+#touch .tc-panel button:active { background: var(--pac); color: #000; }
+#touch .tc-panel .tc-close { align-self: flex-end; background: var(--pac); color: #000; }
