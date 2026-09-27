@@ -72,6 +72,16 @@ html, body {
 #touch .tc-gear:hover, #touch .tc-gear:active { opacity: 1; }
 #touch .tc-cog { width: 100%; height: 100%; fill: var(--pac); display: block; }
 
+/* the pause button, beside the cog while a game is on */
+#touch .tc-pause {
+  position: absolute; top: calc(var(--sat-t) + 8px); right: calc(var(--sat-r) + 52px);
+  width: 40px; height: 40px; padding: 8px; border: 0; background: transparent; cursor: pointer;
+  opacity: 0.55; display: none;
+}
+#touch.tc-playing .tc-pause { display: block; }
+#touch .tc-pause:hover, #touch .tc-pause:active { opacity: 1; }
+#touch .tc-pause svg { width: 100%; height: 100%; fill: var(--pac); display: block; }
+
 /* the settings panel, in the maze's colours */
 #touch .tc-panel {
   position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -89,3 +99,7 @@ html, body {
 #touch .tc-panel button { font: inherit; text-transform: uppercase; padding: 8px 18px; border-radius: 0; border: 2px solid var(--pac); background: #000; color: var(--pac); cursor: pointer; }
 #touch .tc-panel button:active { background: var(--pac); color: #000; }
 #touch .tc-panel .tc-close { align-self: flex-end; background: var(--pac); color: #000; }
+#touch .tc-menu { min-width: 220px; align-items: stretch; text-align: center; }
+#touch .tc-menu h2 { font-size: 22px; letter-spacing: 0.2em; }
+#touch .tc-menu button { font-size: 17px; padding: 12px 18px; }
+#touch .tc-menu .tc-resume { background: var(--pac); color: #000; }

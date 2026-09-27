@@ -152,8 +152,16 @@ export class Touch {
         <div class="tc-arrow tc-u">&#9650;</div><div class="tc-arrow tc-d">&#9660;</div><div class="tc-knob"></div></div>
       <div class="tc-hint"></div>
       <button class="tc-gear" type="button" aria-label="Settings"><svg class="tc-cog" viewBox="0 0 10 10" shape-rendering="crispEdges" aria-hidden="true"><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="3" y="1" width="1" height="1"/><rect x="4" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="6" y="1" width="1" height="1"/><rect x="8" y="1" width="1" height="1"/><rect x="0" y="2" width="1" height="1"/><rect x="1" y="2" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="5" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="7" y="2" width="1" height="1"/><rect x="8" y="2" width="1" height="1"/><rect x="9" y="2" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="7" y="3" width="1" height="1"/><rect x="8" y="3" width="1" height="1"/><rect x="0" y="4" width="1" height="1"/><rect x="1" y="4" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="7" y="4" width="1" height="1"/><rect x="8" y="4" width="1" height="1"/><rect x="9" y="4" width="1" height="1"/><rect x="0" y="5" width="1" height="1"/><rect x="1" y="5" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="7" y="5" width="1" height="1"/><rect x="8" y="5" width="1" height="1"/><rect x="9" y="5" width="1" height="1"/><rect x="1" y="6" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/><rect x="8" y="6" width="1" height="1"/><rect x="0" y="7" width="1" height="1"/><rect x="1" y="7" width="1" height="1"/><rect x="2" y="7" width="1" height="1"/><rect x="3" y="7" width="1" height="1"/><rect x="4" y="7" width="1" height="1"/><rect x="5" y="7" width="1" height="1"/><rect x="6" y="7" width="1" height="1"/><rect x="7" y="7" width="1" height="1"/><rect x="8" y="7" width="1" height="1"/><rect x="9" y="7" width="1" height="1"/><rect x="1" y="8" width="1" height="1"/><rect x="3" y="8" width="1" height="1"/><rect x="4" y="8" width="1" height="1"/><rect x="5" y="8" width="1" height="1"/><rect x="6" y="8" width="1" height="1"/><rect x="8" y="8" width="1" height="1"/><rect x="4" y="9" width="1" height="1"/><rect x="5" y="9" width="1" height="1"/></svg></button>
-      <div class="tc-panel" hidden>
+      <button class="tc-pause" type="button" aria-label="Pause"><svg viewBox="0 0 10 10" shape-rendering="crispEdges" aria-hidden="true"><rect x="2" y="1" width="2" height="8"/><rect x="6" y="1" width="2" height="8"/></svg></button>
+      <div class="tc-panel tc-menu" hidden>
+        <h2>Paused</h2>
+        <button class="tc-resume" type="button">Resume</button>
+        <button class="tc-restart" type="button">Restart game</button>
+        <button class="tc-quit" type="button">Quit to title</button>
+      </div>
+      <div class="tc-panel tc-settings" hidden>
         <h2>Settings</h2>
+        <label>Players <select class="tc-players"><option value="1">1 player</option><option value="2">2 players (take turns)</option></select></label>
         <label>Difficulty <select class="tc-level"><option value="0">Normal (arcade)</option><option value="1">Easy</option><option value="2">Super easy</option></select></label>
         <label><input class="tc-lives" type="checkbox"> Unlimited lives</label>
         <button class="tc-skip" type="button">Skip this level</button>
@@ -169,20 +177,32 @@ export class Touch {
     this.knobEl = el.querySelector('.tc-knob');
     this.hint = el.querySelector('.tc-hint');
     this.arrows = { left: el.querySelector('.tc-l'), right: el.querySelector('.tc-r'), up: el.querySelector('.tc-u'), down: el.querySelector('.tc-d') };
-    this.panel = el.querySelector('.tc-panel');
+    this.panel = el.querySelector('.tc-settings');
+    this.menu = el.querySelector('.tc-menu');
     this.gear = el.querySelector('.tc-gear');
+    this.pauseBtn = el.querySelector('.tc-pause');
     this.onPanelToggle = null; // main.js hooks these
     this.onLevel = null;
     this.onLives = null;
     this.onSkip = null;
+    this.onPlayers = null;
+    this.onPause = null;       // pause button / Resume
+    this.onRestart = null;
+    this.onQuit = null;
+    this.playersBox = el.querySelector('.tc-players');
+    this.playersBox.addEventListener('change', () => this.onPlayers?.(Number(this.playersBox.value)));
     this.levelBox = el.querySelector('.tc-level');
     this.levelBox.addEventListener('change', () => this.onLevel?.(Number(this.levelBox.value)));
     this.livesBox = el.querySelector('.tc-lives');
     this.livesBox.addEventListener('change', () => this.onLives?.(this.livesBox.checked));
     el.querySelector('.tc-skip').addEventListener('click', () => { this.onSkip?.(); this.openPanel(false); });
     const stop = (e) => e.stopPropagation();
-    for (const n of [this.gear, this.panel]) for (const ev of ['pointerdown', 'pointerup', 'pointermove']) n.addEventListener(ev, stop);
+    for (const n of [this.gear, this.panel, this.pauseBtn, this.menu]) for (const ev of ['pointerdown', 'pointerup', 'pointermove']) n.addEventListener(ev, stop);
     this.gear.addEventListener('click', () => this.openPanel(true));
+    this.pauseBtn.addEventListener('click', () => this.onPause?.(true));
+    el.querySelector('.tc-resume').addEventListener('click', () => this.onPause?.(false));
+    el.querySelector('.tc-restart').addEventListener('click', () => this.onRestart?.());
+    el.querySelector('.tc-quit').addEventListener('click', () => this.onQuit?.());
     el.querySelector('.tc-close').addEventListener('click', () => this.openPanel(false));
     this.panel.addEventListener('input', (e) => {
       const f = e.target;
@@ -196,6 +216,14 @@ export class Touch {
 
   setLevel(n) { this.levelBox.value = String(n); }
   setLives(on) { this.livesBox.checked = on; }
+  setPlayers(n) { this.playersBox.value = String(n); }
+
+  /** Main loop: whether a game is on (shows the pause button) and whether it's paused (shows the menu). */
+  setPlayState(playing, paused) {
+    this.el.classList.toggle('tc-playing', playing);
+    const show = playing && paused && this.panel.hidden;
+    if (this.menu.hidden === show) { this.menu.hidden = !show; this.pointers.clear(); this.recompute(); }
+  }
 
   openPanel(open) {
     this.panel.hidden = !open;

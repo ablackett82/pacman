@@ -20,8 +20,10 @@ Open the site, then on iPad: Share → **Add to Home Screen**. The attract mode
 (the ghosts' introductions and the demo game) is the title screen.
 
 - Keyboard: arrows / WASD to steer; Space / Enter / 1 starts a one-player game, 2 a two-player game;
-  P pause, M mute, F fullscreen, Esc back to the title
-- Touch: tap to start, swipe anywhere to steer (or a d-pad or floating stick, under the pixel cog)
+  P pause, R restart, M mute, F fullscreen, Esc back to the title
+- Touch: tap to start (one or two players, set under the pixel cog), swipe anywhere to steer (or
+  a d-pad or floating stick, also under the cog); the pause button beside the cog opens Resume /
+  Restart game / Quit to title
 - Gamepad: d-pad or left stick; A or Start to start
 
 Cheats, in the settings (the cog) or from the keyboard. Only Normal games
@@ -58,6 +60,7 @@ npm run dev     # http://localhost:8080/
 npm test
 ```
 
+`node tools/icons.mjs` redraws the home-screen icons;
 `node tools/walls.mjs` regenerates the maze wall tiles from the maze layout;
 `node tools/shot.mjs out.png frames [coin]` renders a frame to PNG;
 `node tools/emu/diff.mjs [seed] [frames] [players]` runs a long comparison

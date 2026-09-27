@@ -48,7 +48,8 @@ async function main() {
   let level = Math.min(2, Number(store.get('level', 0)) || 0);
   let endless = store.get('endless', '0') === '1';
   let highScore = Number(store.get('highscore', 0)) || 0;
-  let paused = false, assisted = false, wasPlaying = false;
+  let players = Number(store.get('players', 1)) === 2 ? 2 : 1;
+  let paused = false, settingsOpen = false, assisted = false, wasPlaying = false;
   let starting = null;      // {players, t}: dropping the coins and pressing start
   let skip = 0;             // frames left holding the rack-test switch (skip level)
   let acc = 0, last = performance.now(), blink = 0;
@@ -56,7 +57,12 @@ async function main() {
 
   touch.setLevel(level);
   touch.setLives(endless);
-  touch.onPanelToggle = (open) => { paused = open; };
+  touch.setPlayers(players);
+  touch.onPanelToggle = (open) => { settingsOpen = open; };
+  touch.onPlayers = (n) => { players = n; store.set('players', n); };
+  touch.onPause = (on) => { paused = on && g.m[0x4e00] === 3; };
+  touch.onRestart = () => restart();
+  touch.onQuit = () => quit();
   touch.onLevel = (n) => setLevel(n);
   touch.onLives = (on) => setEndless(on);
   touch.onSkip = () => skipLevel();
@@ -133,10 +139,12 @@ async function main() {
     if (!s) return [in0, in1];
     const t = s.t++;
     const coins = s.players;
-    // each coin: four frames down, then up (the game debounces over four frames)
-    const k = Math.floor(t / 20);
-    if (k < coins && t % 20 < 4) in0 &= ~IN0_COIN;
-    if (t >= coins * 20 && g.m[0x4e00] === 2 && g.m[0x4e03] === 1) {
+    // each coin: four frames down, then up. The game only counts a press that
+    // follows two frames up, so a machine just switched on (a restart) needs a
+    // few frames of the slot up before the first coin.
+    const c = t - 4;
+    if (c >= 0 && Math.floor(c / 20) < coins && c % 20 < 4) in0 &= ~IN0_COIN;
+    if (c >= coins * 20 && g.m[0x4e00] === 2 && g.m[0x4e03] === 1) {
       in1 &= ~(s.players === 2 ? IN1_START2 : IN1_START1);
       if (!s.pressed) s.pressed = t;
     }
@@ -183,6 +191,13 @@ async function main() {
     sound.stopAll();
   }
 
+  /** Back to the title and straight into a new game with the same players. */
+  function restart() {
+    const n = g.m[0x4e00] === 3 ? g.m[0x4e70] + 1 : players;
+    quit();
+    startGame(n);
+  }
+
   // ---- text over the attract mode ----
   function text(x, y, s, pal) {
     const colours = PALETTES[pal], out = image.data;
@@ -208,7 +223,7 @@ async function main() {
     blink++;
     const tap = touch.active;
     text(14, 34, `${LEVELS[level].name}${endless ? ' INF' : ''}`.padStart(14), level || endless ? 0x05 : 0x0f);
-    text(14, 35, (blink & 32 ? '' : tap ? 'TAP TO START' : 'SPACE STARTS').padStart(14), 0x09);
+    text(14, 35, (blink & 32 ? '' : tap ? (players === 2 ? 'TAP: 2 PLAYERS' : 'TAP TO START') : 'SPACE STARTS').padStart(14), 0x09);
   }
 
   // ---- layout ----
@@ -240,14 +255,19 @@ async function main() {
     if (keyboard.consume('KeyN')) skipLevel();
     if (keyboard.consume('Escape')) quit();
     if (keyboard.consume('KeyP') && g.m[0x4e00] === 3) { paused = !paused; touch.notifyOtherInput(); }
-    const start1 = keyboard.consume('Space', 'Enter', 'Digit1') || gamepad.startPressed || touch.consumeStart();
+    const start1 = keyboard.consume('Space', 'Enter', 'Digit1');
+    const startTap = touch.consumeStart() || gamepad.startPressed; // one or two players, from the settings
     const start2 = keyboard.consume('Digit2');
+    if (keyboard.consume('KeyR') && g.m[0x4e00] === 3) restart();
     if (g.m[0x4e00] !== 3 && !starting) {
       if (start2) startGame(2);
+      else if (startTap) startGame(players);
       else if (start1) startGame(1);
     }
 
-    if (!paused) {
+    if (g.m[0x4e00] !== 3) paused = false;
+    touch.setPlayState(g.m[0x4e00] === 3, paused);
+    if (!paused && !settingsOpen) {
       acc += dt;
       const stepT = STEP / (g.m[0x4e00] === 3 ? LEVELS[level].speed : 1);
       while (acc >= stepT) { step(in0); acc -= stepT; }
@@ -256,21 +276,17 @@ async function main() {
     image.data.set(screen.draw(g));
     overlay();
     ctx.putImageData(image, 0, 0);
-    if (paused && touch.panel.hidden) {
-      ctx.fillStyle = 'rgba(0,0,0,0.5)';
-      ctx.fillRect(0, 128, SCREEN_W, 32);
-      ctx.fillStyle = '#ff0';
-      ctx.font = 'bold 16px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText('PAUSED', SCREEN_W / 2, 149);
-    }
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
 
-  // audio can only start from a user gesture on iOS
-  for (const ev of ['keydown', 'pointerdown', 'touchstart']) window.addEventListener(ev, () => sound.unlock(), { passive: true });
-  document.addEventListener('visibilitychange', () => { if (document.hidden && g.m[0x4e00] === 3) paused = true; });
+  // audio can only start from a user gesture on iOS (touchend and click are the
+  // ones a home-screen app reliably counts)
+  for (const ev of ['keydown', 'pointerdown', 'pointerup', 'touchstart', 'touchend', 'click']) window.addEventListener(ev, () => sound.unlock(), { passive: true, capture: true });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && g.m[0x4e00] === 3) paused = true;
+    if (!document.hidden) sound.unlock();
+  });
 }
 
 function toggleFullscreen() {
